@@ -8,14 +8,14 @@ Data inside a database can be exposed to the outside world by using a database b
 
 The following are the sections available in this guide.
 
-- [What you'll build](#what-you-build)
-- [Prerequisites](#pre-req)
-- [Developing the RESTFul service with circuit breaker](#develop-app)
+- [What you'll build](#what-youll-build)
+- [Prerequisites](#prerequisites)
+- [Developing the RESTFul service with circuit breaker](#developing-the-sql-data-backed-web-service)
 - [Testing](#testing)
-- [Deployment](#deploying-the-scenario)
+- [Deployment](#deployment)
 - [Observability](#observability)
 
-## <a name="what-you-build"></a>  What you'll build
+## What you'll build
 
 You'll build an employee data management REST service that performs CRUD Operations (Create, Read, Update, Delete) on the MySQL database.  Also, this guide walks you through the process of accessing relational data via the Ballerina language. The service will have following functionalities.
 
@@ -30,7 +30,7 @@ Basically, this service will deal with a MySQL database and expose the data oper
 ![alt text](/images/data-backed-service.png)
 
 
-## <a name="pre-req"></a> Prerequisites
+## Prerequisites
  
 * JDK 1.8 or later
 * [Ballerina Distribution](https://github.com/ballerina-lang/ballerina/blob/master/docs/quick-tour.md)
@@ -44,7 +44,7 @@ Basically, this service will deal with a MySQL database and expose the data oper
 - [Docker](https://docs.docker.com/engine/installation/)
 - Ballerina IDE plugins ([IntelliJ IDEA](https://plugins.jetbrains.com/plugin/9520-ballerina), [VSCode](https://marketplace.visualstudio.com/items?itemName=WSO2.Ballerina), [Atom](https://atom.io/packages/language-ballerina))
 
-## <a name="develop-app"></a> Developing the SQL data backed web service
+## Developing the SQL data backed web service
 ### Before you begin
 #### Create the database
 Navigate to the command line and open the MySQL client by entering the following command.**
@@ -336,9 +336,9 @@ You can implement custom functions in Ballerina that do specific tasks. For this
 
 The `endpoint` keyword in Ballerina refers to a connection with a remote service. In this case, the remote service is a MySQL database. `employeeDB` is the reference name for the SQL endpoint. The endpoint is initialized with an SQL connection. The rest of the code is just preparing SQL queries and executing them by calling the `update` action in the `ballerina/data.sql` package. Finally, the status of the SQL operation is returned as a JSON file.
 
-## <a name="testing"></a> Testing 
+## Testing 
 
-### <a name="invoking"></a> Invoking the RESTful service 
+### Invoking the RESTful service 
 
 You can run the RESTful service that you developed above, in your local environment. You need to have the Ballerina installation on your local machine and simply point to the <ballerina>/bin/ballerina binary to execute all the following steps.  
 
@@ -408,7 +408,7 @@ Output:
 {"Status":"Data Deleted Successfully"}
 ```
 
-### <a name="unit-testing"></a> Writing unit tests 
+### Writing unit tests 
 
 In Ballerina, the unit test cases should be in the same package inside a file named as `test`. The naming convention should be as follows.
 * Test files should contain _test.bal suffix.
@@ -423,11 +423,11 @@ $ ballerina test data_backed_service
 ```
 
 
-## <a name="deploying-the-scenario"></a> Deployment
+## Deployment
 
 Once you are done with the development, you can deploy the service using any of the methods that are listed below. 
 
-### <a name="deploying-on-locally"></a> Deploying locally
+### Deploying locally
 You can deploy the RESTful service that you developed above in your local environment. You can use the Ballerina executable archive (.balx) file that you created above and run it in your local environment as follows. 
 
 ```
@@ -435,21 +435,21 @@ ballerina run employee_db_service.balx
 ```
 
 
-### <a name="deploying-on-docker"></a> Deploying on Docker
+### Deploying on Docker
 (Work in progress) 
 
-### <a name="deploying-on-k8s"></a> Deploying on Kubernetes
-(Work in progress) 
-
-
-## <a name="observability"></a> Observability 
-
-### <a name="logging"></a> Logging
-(Work in progress) 
-
-### <a name="metrics"></a> Metrics
+### Deploying on Kubernetes
 (Work in progress) 
 
 
-### <a name="tracing"></a> Tracing 
+## Observability 
+
+### Logging
+(Work in progress) 
+
+### Metrics
+(Work in progress) 
+
+
+### Tracing 
 (Work in progress) 
