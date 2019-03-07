@@ -19,41 +19,43 @@ import ballerina/http;
 import ballerina/log;
 import ballerina/mysql;
 import ballerina/sql;
-//import ballerinax/docker;
-//import ballerinax/kubernetes;
+import ballerinax/docker;
+import ballerinax/kubernetes;
 
-//@docker:Config {
-//    registry: "ballerina.guides.io",
-//    name: "employee_database_service",
-//    tag: "v1.0",
-//    baseImage: "ballerina/ballerina:<BALLERINA_VERSION>"
-//}
-//
-//@docker:CopyFiles{
-//    files: [{ source: <path_to_JDBC_jar>,
-//            target: "/ballerina/runtime/bre/lib" }]
-//}
-//
-//@docker:Expose{}
+@docker:Config {
+    registry: "ballerina.guides.io",
+    name: "employee_database_service",
+    tag: "v1.0",
+    baseImage: "ballerina/ballerina:<BALLERINA_VERSION>"
+}
 
-//@kubernetes:Ingress {
-//    hostname: "ballerina.guides.io",
-//    name: "ballerina-guides-employee-database-service",
-//    path: "/"
-//}
-//
-//@kubernetes:Service {
-//    serviceType: "NodePort",
-//    name: "ballerina-guides-employee-database-service"
-//}
-//
-//@kubernetes:Deployment {
-//    image: "ballerina.guides.io/employee_database_service:v1.0",
-//    baseImage: "ballerina/ballerina:<BALLERINA_VERSION>",
-//    name: "ballerina-guides-employee-database-service",
-//    copyFiles: [{ target: "/ballerina/runtime/bre/lib",
-//                source: <path_to_JDBC_jar> }]
-//}
+@docker:CopyFiles{
+    files: [{ source: "<path_to_JDBC_jar>",
+            target: "/ballerina/runtime/bre/lib" }]
+}
+
+@kubernetes:Ingress {
+    hostname: "ballerina.guides.io",
+    name: "ballerina-guides-employee-database-service",
+    path: "/"
+}
+
+@kubernetes:Service {
+    serviceType: "NodePort",
+    name: "ballerina-guides-employee-database-service"
+}
+
+@kubernetes:Deployment {
+    image: "ballerina.guides.io/employee_database_service:v1.0",
+    baseImage: "ballerina/ballerina:<BALLERINA_VERSION>",
+    name: "ballerina-guides-employee-database-service",
+    copyFiles: [{ target: "/ballerina/runtime/bre/lib",
+                source: "<path_to_JDBC_jar>" }],
+    username:"<USERNAME>",
+    password:"<PASSWORD>",
+    push:true,
+    imagePullPolicy:"Always"
+}
 
 listener http:Listener httpListener = new(9090);
 
@@ -70,7 +72,7 @@ mysql:Client employeeDB = new({
         port: config:getAsInt("DATABASE_PORT", default = 3306),
         name: config:getAsString("DATABASE_NAME", default = "EMPLOYEE_RECORDS"),
         username: config:getAsString("DATABASE_USERNAME", default = "root"),
-        password: config:getAsString("DATABASE_PASSWORD", default = ""),
+        password: config:getAsString("DATABASE_PASSWORD", default = "root"),
         dbOptions: { useSSL: false }
     });
 
