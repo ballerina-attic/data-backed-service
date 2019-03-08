@@ -19,20 +19,20 @@ import ballerina/http;
 import ballerina/log;
 import ballerina/mysql;
 import ballerina/sql;
-import ballerinax/docker;
+//import ballerinax/docker;
 import ballerinax/kubernetes;
 
-@docker:Config {
-    registry: "ballerina.guides.io",
-    name: "employee_database_service",
-    tag: "v1.0",
-    baseImage: "ballerina/ballerina:<BALLERINA_VERSION>"
-}
-
-@docker:CopyFiles{
-    files: [{ source: "<path_to_JDBC_jar>",
-            target: "/ballerina/runtime/bre/lib" }]
-}
+//@docker:Config {
+//    registry: "ballerina.guides.io",
+//    name: "employee_database_service",
+//    tag: "v1.0",
+//    baseImage: "ballerina/ballerina:<BALLERINA_VERSION>"
+//}
+//
+//@docker:CopyFiles{
+//    files: [{ source: "<path_to_JDBC_jar>",
+//            target: "/ballerina/runtime/bre/lib" }]
+//}
 
 @kubernetes:Ingress {
     hostname: "ballerina.guides.io",
