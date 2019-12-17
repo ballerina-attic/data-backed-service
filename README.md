@@ -59,19 +59,26 @@ Ballerina is a complete programming language that can have any custom project st
 ```
 data-backed-service
  └── guide
+    └── src
       └── data_backed_service
       |    ├── employee_db_service.bal
-      |    └── test
+      |    └── tests
       |        └── employee_db_service_test.bal
       └── ballerina.conf
 ```
 
-- Create the above directories in your local machine and also create empty `.bal` and `.conf` files.
+- Open the terminal and create a ballerina project named `data-backed-service/guide`.
 
-- Then open the terminal and navigate to `data-backed-service/guide` and run Ballerina project initializing toolkit.
 ```bash
-   $ ballerina init
+   $ ballerina new data-backed-service
 ```
+- The above command initializes the project with the Ballerina.toml file, src folder, and a tests folder.
+
+- Once the project is initialized, a module can be created inside the project using the ballerina create command.
+
+```bash
+   $ ballerina create employee_db_service
+ ```
 
 ### Developing the SQL data backed web service
 Ballerina language has built-in support for writing web services. The `service` keyword in Ballerina simply defines a web service. Inside the service block, we can have all the required resources. You can define a resource function inside the service. You can implement the business logic inside a resource function using Ballerina language syntax.
@@ -94,9 +101,9 @@ The following Ballerina code is the employee data service with resource function
 ```ballerina
 import ballerina/config;
 import ballerina/http;
+import ballerinax/java.jdbc;
+import ballerina/lang.'int as ints;
 import ballerina/log;
-import ballerina/mysql;
-import ballerina/sql;
 
 listener http:Listener httpListener = new(9090);
 
@@ -108,14 +115,13 @@ type Employee record {
 };
 
 // Create SQL client for MySQL database
-mysql:Client employeeDB = new({
-        host: config:getAsString("DATABASE_HOST", defaultValue = "localhost"),
-        port: config:getAsInt("DATABASE_PORT", defaultValue = 3306),
-        name: config:getAsString("DATABASE_NAME", defaultValue = "EMPLOYEE_RECORDS"),
-        username: config:getAsString("DATABASE_USERNAME", defaultValue = "root"),
-        password: config:getAsString("DATABASE_PASSWORD", defaultValue = "root"),
-        dbOptions: { useSSL: false }
-    });
+jdbc:Client employeeDB = new ({
+    url: config:getAsString("DATABASE_URL", "jdbc:mysql://localhost:3306/EMPLOYEE_RECORDS"),
+    username: config:getAsString("DATABASE_USERNAME", "root"),
+    password: config:getAsString("DATABASE_PASSWORD", "root"),
+    poolOptions: { maximumPoolSize: 5 },
+    dbOptions: { useSSL: false }
+});
 
 // Service for the employee data service
 @http:ServiceConfig {
@@ -135,15 +141,15 @@ service EmployeeData on httpListener {
         var payloadJson = request.getJsonPayload();
 
         if (payloadJson is json) {
-            Employee|error employeeData = Employee.convert(payloadJson);
+            Employee|error employeeData = Employee.constructFrom(payloadJson);
 
             if (employeeData is Employee) {
                 // Validate JSON payload
-                if (employeeData.name == "" || employeeData.age == 0 || employeeData.ssn == 0 ||
+                if (employeeData.name == "" || employeeData.age ==0 || employeeData.ssn == 0 ||
                     employeeData.employeeId == 0) {
-                    response.setPayload("Error : json payload should contain
-                    {name:<string>, age:<int>, ssn:<123456>, employeeId:<int>}");
-                    response.statusCode = 400;
+                        response.statusCode = 400;
+                        response.setPayload("Error: JSON payload should contain " +
+                        "{name:<string>, age:<int>, ssn:<123456>, employeeId:<int>");
                 } else {
                     // Invoke insertData function to save data in the MySQL database
                     json ret = insertData(employeeData.name, employeeData.age, employeeData.ssn,
@@ -177,12 +183,12 @@ service EmployeeData on httpListener {
         // Initialize an empty http response message
         http:Response response = new;
         // Convert the employeeId string to integer
-        var empID = int.convert(employeeId);
+        var empID = ints:fromString(employeeId);
         if (empID is int) {
-            // Invoke retrieveById function to retrieve data from Mymysql database
+            // Invoke retrieveById function to retrieve data from MYSQL database
             var employeeData = retrieveById(empID);
             // Send the response back to the client with the employee data
-            response.setPayload(untaint employeeData);
+            response.setPayload(employeeData);
         } else {
             response.statusCode = 400;
             response.setPayload("Error: employeeId parameter should be a valid integer");
@@ -205,7 +211,7 @@ service EmployeeData on httpListener {
         // Extract the data from the request payload
         var payloadJson = request.getJsonPayload();
         if (payloadJson is json) {
-            Employee|error employeeData = Employee.convert(payloadJson);
+            Employee|error employeeData = Employee.constructFrom(payloadJson);
 
             if (employeeData is Employee) {
                 if (employeeData.name == "" || employeeData.age == 0 || employeeData.ssn == 0 ||
@@ -246,7 +252,7 @@ service EmployeeData on httpListener {
         // Initialize an empty http response message
         http:Response response = new;
         // Convert the employeeId string to integer
-        var empID = int.convert(employeeId);
+        var empID = ints:fromString(employeeId);
         if (empID is int) {
             var deleteStatus = deleteData(empID);
             // Send the response back to the client with the employee data
@@ -270,7 +276,7 @@ public function insertData(string name, int age, int ssn, int employeeId) return
     // Insert data to SQL database by invoking update action
     var ret = employeeDB->update(sqlString, name, age, ssn, employeeId);
     // Check type to verify the validity of the result from database
-    if (ret is sql:UpdateResult) {
+    if (ret is jdbc:UpdateResult) {
         updateStatus = { "Status": "Data Inserted Successfully" };
     } else {
         updateStatus = { "Status": "Data Not Inserted", "Error": "Error occurred in data update" };
@@ -287,7 +293,7 @@ public function retrieveById(int employeeID) returns (json) {
     var ret = employeeDB->select(sqlString, (), employeeID);
     if (ret is table<record {}>) {
         // Convert the sql data table into JSON using type conversion
-        var jsonConvertRet = json.convert(ret);
+        var jsonConvertRet = json.constructFrom(ret);
         if (jsonConvertRet is json) {
             jsonReturnValue = jsonConvertRet;
         } else {
@@ -307,8 +313,8 @@ public function updateData(string name, int age, int ssn, int employeeId) return
     "UPDATE EMPLOYEES SET Name = ?, Age = ?, SSN = ? WHERE EmployeeID  = ?";
     // Update existing data by invoking update remote function defined in ballerina sql client
     var ret = employeeDB->update(sqlString, name, age, ssn, employeeId);
-    if (ret is sql:UpdateResult) {
-        if (ret.updatedRowCount > 0) {
+    if (ret is jdbc:UpdateResult) {
+        if (ret["updatedRowCount"] > 0) {
             updateStatus = { "Status": "Data Updated Successfully" };
         } else {
             updateStatus = { "Status": "Data Not Updated" };
@@ -327,7 +333,7 @@ public function deleteData(int employeeID) returns (json) {
     string sqlString = "DELETE FROM EMPLOYEES WHERE EmployeeID = ?";
     // Delete existing data by invoking update remote function defined in ballerina sql client
     var ret = employeeDB->update(sqlString, employeeID);
-    if (ret is sql:UpdateResult) {
+    if (ret is jdbc:UpdateResult) {
         updateStatus = { "Status": "Data Deleted Successfully" };
     } else {
         updateStatus = { "Status": "Data Not Deleted",  "Error": "Error occurred during delete operation" };
@@ -360,11 +366,9 @@ You can implement custom functions in Ballerina that perform specific tasks. For
    - `ballerina.conf` file can be used to provide external configurations to the Ballerina programs. Since this guide needs MySQL database integration, a Ballerina coniguration file is used to provide the database connection properties to our Ballerina program.
    This configuration file has the following fields. Change these configurations with your connection properties accordingly.
 ```
-   DATABASE_HOST = "localhost"
-   DATABASE_PORT = 3306
+   DATABASE_URL = "jdbc:mysql://localhost:3306/EMPLOYEE_RECORDS"
    DATABASE_USERNAME = "username"
    DATABASE_PASSWORD = "password"
-   DATABASE_NAME = "EMPLOYEE_RECORDS"
 ```
 
 ### Invoking the employee database service 
@@ -411,14 +415,14 @@ Output:
 
 ### Writing unit tests 
 
-In Ballerina, the unit test cases should be in the same module inside a folder named as `test`.  When writing the test functions the below convention should be followed.
+In Ballerina, the unit test cases should be in the same module inside a folder named as `tests`.  When writing the test functions the below convention should be followed.
 - Test functions should be annotated with `@test:Config`. See the below example.
 ```ballerina
-   @test:Config
+   @test:Config{}
    function testAddEmployeeResource() {
    ...
 ```
-You can download the [employee_db_service_test.bal](guide/data_backed_service/tests/employee_db_service_test.bal) sample, which contains unit test cases to test the resources available in the employee_data_service we implemented above.
+You can download the [employee_db_service_test.bal](guide/src/data_backed_service/tests/employee_db_service_test.bal) sample, which contains unit test cases to test the resources available in the employee_data_service we implemented above.
 
 To run the unit tests, go to the `guide` directory and run the following command.
 Please note that `--config` option is required if it is needed to read configurations from a ballerina configuration file.
@@ -432,25 +436,16 @@ $ ballerina test --config ballerina.conf
 Once you are done with the development, you can deploy the service using any of the methods that are listed below. 
 
 ### Deploying locally
-You can deploy the RESTful service that you developed above in your local environment. You need to have the Ballerina installed on your local machine. To deploy simply execute all the following steps.  
-
-- As the first step, you can build a Ballerina executable archive (.balx) of the service that we developed above, using the following command. It points to the directory structure of the service that we developed above and it will create an executable binary out of that. 
+You can deploy the RESTful service that you developed above in your local environment. You need to have the Ballerina installed on your local machine. To deploy simply execute the following command.  
 
 ```
-   $ ballerina build data_backed_service
-```
-
-- Once the data_backed_service.balx is created in the ./target folder, you can run that with the following command.
-
-```
-   $ ballerina run target/data_backed_service.balx
+   $ ballerina run data_backed_service
 ```
 
 - The successful execution of the service should show us the following output. 
 
 ```
-   ballerina: initiating service(s) in 'data_backed_service'
-   ballerina: started HTTP/WS server endpoint 0.0.0.0:9090
+    [ballerina/http] started HTTP/WS listener 0.0.0.0:9090
 ```
 ### Deploying on Docker
 
@@ -492,15 +487,14 @@ import ballerinax/docker;
 
 // Employee type definition
 
-// Create SQL endpoint to MySQL database
-mysql:Client employeeDB = new({
-        host: <MySQL_Container_IP>,
-        port: 3306,
-        name: "EMPLOYEE_RECORDS",
-        username: "root",
-        password: "root",
-        poolOptions: { maximumPoolSize: 5 }
-    });
+// Create SQL client for MySQL database
+jdbc:Client employeeDB = new ({
+    url: config:getAsString("DATABASE_URL", "jdbc:mysql://{MYSQL_CONTAINER_ADDRESS}:3306/EMPLOYEE_RECORDS"),
+    username: config:getAsString("DATABASE_USERNAME", "root"),
+    password: config:getAsString("DATABASE_PASSWORD", "root"),
+    poolOptions: { maximumPoolSize: 5 },
+    dbOptions: { useSSL: false }
+});
 
 @docker:Config {
     registry: "ballerina.guides.io",
@@ -524,7 +518,7 @@ listener http:Listener httpListener = new(9090);
 service EmployeeData on httpListener {
 ``` 
 
- - `@docker:Config` annotation is used to provide the basic docker image configurations for the sample. `@docker:CopyFiles` is used to copy the MySQL jar file into the ballerina bre/lib folder. Make sure to replace the `<path_to_JDBC_jar>` with your JDBC jar's path. `@docker:Expose {}` is used to expose the port. Finally you need to change the host field in the  `mysql:Client` endpoint definition to the IP address of the MySQL container. You can obtain this IP address using the below command.
+ - `@docker:Config` annotation is used to provide the basic docker image configurations for the sample. `@docker:CopyFiles` is used to copy the MySQL jar file into the ballerina bre/lib folder. Make sure to replace the `<path_to_JDBC_jar>` with your JDBC jar's path. `@docker:Expose {}` is used to expose the port. Finally you need to change the url field in the  `jdbc:Client` endpoint definition to the IP address of the MySQL container. You can obtain this IP address using the below command.
 
 ```
    $ docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' <Container_ID>
