@@ -17,7 +17,6 @@
 import ballerina/config;
 import ballerina/http;
 import ballerina/log;
-//import ballerinax/docker;
 import ballerina/kubernetes;
 import ballerinax/java.jdbc;
 import ballerina/lang.'int as ints;
