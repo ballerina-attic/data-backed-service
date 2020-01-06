@@ -15,6 +15,7 @@
 // under the License.
 
 import ballerina/config;
+//import ballerinax/docker;
 import ballerina/http;
 import ballerinax/java.jdbc;
 import ballerina/jsonutils;
@@ -70,8 +71,8 @@ type Employee record {
 // Create SQL client for MySQL database
 jdbc:Client employeeDB = new({
         url: "jdbc:mysql://localhost:3306/EMPLOYEE_RECORDS",
-        username: config:getAsString("root", "root"),
-        password: config:getAsString("root", "root"),
+        username: config:getAsString("DATABASE_USERNAME", "root"),
+        password: config:getAsString("DATABASE_PASSWORD", "root"),
         poolOptions: { maximumPoolSize: 5 },
         dbOptions: { useSSL: false }
     });
