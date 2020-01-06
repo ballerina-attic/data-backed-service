@@ -16,9 +16,11 @@
 
 import ballerina/config;
 import ballerina/http;
-import ballerina/log;
-import ballerina/kubernetes;
 import ballerinax/java.jdbc;
+import ballerina/jsonutils;
+import ballerina/kubernetes;
+import ballerina/log;
+
 import ballerina/lang.'int as ints;
 
 //@docker:Config {
@@ -68,11 +70,8 @@ type Employee record {
 // Create SQL client for MySQL database
 jdbc:Client employeeDB = new({
         url: "jdbc:mysql://localhost:3306/EMPLOYEE_RECORDS",
-        //host: config:getAsString("DATABASE_HOST", defaultValue = "localhost"),
-        //port: config:getAsInt("DATABASE_PORT", defaultValue = 3306),
-        //name: config:getAsString("DATABASE_NAME", defaultValue = "EMPLOYEE_RECORDS"),
-        username: config:getAsString("DATABASE_USERNAME", "root"),
-        password: config:getAsString("DATABASE_PASSWORD", "root"),
+        username: config:getAsString("root", "root"),
+        password: config:getAsString("root", "root"),
         poolOptions: { maximumPoolSize: 5 },
         dbOptions: { useSSL: false }
     });
@@ -117,10 +116,11 @@ service EmployeeData on httpListener {
                 response.statusCode = 400;
                 response.setPayload("Error: Please send the JSON payload in the correct format");
             }
-        }
+        } else {
             // Send an error response in case of an error in retriving the request payload
-        response.statusCode = 500;
-        response.setPayload("Error: An internal error occurred");
+            response.statusCode = 500;
+            response.setPayload("Error: An internal error occurred");
+        }
         var respondRet = httpCaller->respond(response);
         if (respondRet is error) {
             // Log the error for the service maintainers.
@@ -248,13 +248,7 @@ public function retrieveById(int employeeID) returns (json) {
     var ret = employeeDB->select(sqlString, (), employeeID);
     if (ret is table<record {}>) {
         // Convert the sql data table into JSON using type conversion
-        var jsonConvertRet = json.constructFrom(ret);
-        if (jsonConvertRet is json) {
-            jsonReturnValue = jsonConvertRet;
-        } else {
-            jsonReturnValue = { "Status": "Data Not Found", "Error": "Error occurred in data conversion" };
-            log:printError("Error occurred in data conversion", err = jsonConvertRet);
-        }
+        jsonReturnValue = jsonutils:fromTable(ret);
     } else {
         jsonReturnValue = { "Status": "Data Not Found", "Error": "Error occurred in data retrieval" };
         log:printError("Error occurred in data retrieval", err = ret);
