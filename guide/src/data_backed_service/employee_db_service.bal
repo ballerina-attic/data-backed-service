@@ -54,8 +54,8 @@ import ballerina/lang.'int as ints;
                 sourceFile: "<path_to_JDBC_jar>" }],
     username:"<USERNAME>",
     password:"<PASSWORD>",
-    push:false
-    //imagePullPolicy:"Always"
+    push:false,
+    imagePullPolicy:"Always"
 }
 
 listener http:Listener httpListener = new(9090);
