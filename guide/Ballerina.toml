@@ -2,4 +2,12 @@
 org-name= "wso2"
 version= "0.1.0"
 
-[dependencies]
+[platform]
+target = "java8"
+
+    [[platform.libraries]]
+    artafactId = "mysql-connector-java"
+    version = "5.1.47"
+    path = "<path_to_JDBC_jar>"
+    groupId = "mysql"
+    modules = ["data_backed_service"]

@@ -50,8 +50,6 @@ import ballerina/lang.'int as ints;
 @kubernetes:Deployment {
     image: "ballerina.guides.io/employee_database_service:v1.0",
     name: "ballerina-guides-employee-database-service",
-    copyFiles: [{ target: "<BALLERINA_HOME>/bre/lib",
-                sourceFile: "<path_to_JDBC_jar>" }],
     username:"<USERNAME>",
     password:"<PASSWORD>",
     push:false,
