@@ -49,14 +49,13 @@ import ballerina/lang.'int as ints;
 
 @kubernetes:Deployment {
     image: "ballerina.guides.io/employee_database_service:v1.0",
-    baseImage: "ballerina/ballerina:<BALLERINA_VERSION>",
     name: "ballerina-guides-employee-database-service",
     copyFiles: [{ target: "<BALLERINA_HOME>/bre/lib",
                 sourceFile: "<path_to_JDBC_jar>" }],
     username:"<USERNAME>",
     password:"<PASSWORD>",
-    push:true,
-    imagePullPolicy:"Always"
+    push:false
+    //imagePullPolicy:"Always"
 }
 
 listener http:Listener httpListener = new(9090);
